@@ -1,5 +1,6 @@
 *.xlsx
 *.~lock.*
+files_names.py
 
 
 # Byte-compiled / optimized / DLL files

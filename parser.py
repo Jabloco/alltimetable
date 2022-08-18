@@ -2,11 +2,16 @@ import re
 
 import openpyxl
 
-def separate_num(words_list: list):
+from files_names import contacts_file
+
+
+def separate_num(words_list: list) -> tuple[dict, dict]:
     """
     Функция для разделения корпоративных и личных номеров телефона.
+
     Принимае список.
-    Возвращает два списка.
+
+    Возвращает два списка person_phone и corp_phone. Именно в этом порядке
     """
     person_phone = []
     corp_phone = []
@@ -14,20 +19,21 @@ def separate_num(words_list: list):
     for word in words_list:
         if not re.match('[\d]+', word):
             continue
-        if (re.search('[личн]', word) 
-                and len(re.match('[\d]+', word).group(0))==11):
+        if (re.search('[личн]', word)
+                and len(re.match('[\d]+', word).group(0)) == 11):
             person_phone.append(int(re.match('[\d]+', word).group(0)))
-        elif (len(re.match('[\d]+',word).group(0)) == 4
-                or len(re.match('[\d]+',word).group(0)) == 11):
+        elif (len(re.match('[\d]+', word).group(0)) == 4
+                or len(re.match('[\d]+', word).group(0)) == 11):
             corp_phone.append(int(word))
     return person_phone, corp_phone
 
-def contacts_parser() -> list:
+
+def contacts_parser(file_link: str) -> list:
     """
     Из файла парсим номер магазина, номер партии, телефоны
-    Возвращаем в виде списка словарей
+    Возвращает список словарей
     """
-    contacts_book = openpyxl.load_workbook("Телефоны Магазинов.xlsx")
+    contacts_book = openpyxl.load_workbook(file_link)
     worksheet = contacts_book.active
     shops_info_list = []
     for row in range(1, worksheet.max_row):
@@ -42,12 +48,9 @@ def contacts_parser() -> list:
                 case 3:  # номер магазина
                     shop_info["num_shop"] = int(col[row].value)
                 case 6:  # номера телефонов
-                    
-                    # если ячейка не пустая
-                    if col[row].value:
+                    if col[row].value:  # если ячейка не пустая
                         # разбираем ячейку на "слова", формируем список
                         words_list = re.findall('[\w]+', col[row].value)
-                    
                     person_phone, corp_phone = separate_num(words_list)
                     shop_info["phone_num"] = {}
                     shop_info["phone_num"]["person_num"] = person_phone
@@ -57,5 +60,5 @@ def contacts_parser() -> list:
 
 
 if __name__ == "__main__":
-    for elem in contacts_parser():
+    for elem in contacts_parser(contacts_file):
         print(elem)
