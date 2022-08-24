@@ -115,21 +115,31 @@ def alltimetable_parser() -> list:
                     except TypeError:
                         shop_info["fiscal"]["reg_num"] = None
                 case 13:  # оплата в такскоме до
-                    # taxcom_paid_up_raw = datetime(col[row].value)
-                    # # date = re.match('[\d+\/d+\/d+]',taxcom_paid_up_raw).group(0)
-                    # # try:
-                    # #     str_to_date = datetime.strptime(date, '%m/%d/%Y')
-                    # # except TypeError:
-                    # #     shop_info["fiscal"]["taxcom_paid_up"] = None
-                    # #     continue
-                    # try:
-                    #     taxcom_paid_up = taxcom_paid_up_raw.strftime('%d.%m.%Y')
-                    # except TypeError:
-                    #     taxcom_paid_up = None
-                    # # taxcom_paid_up = str_to_date.strftime('%d.%m.%Y')
-                    # shop_info["fiscal"]["taxcom_paid_up"] = taxcom_paid_up
-                    pass
-
+                    taxcom_date = col[row].value
+                    if isinstance(taxcom_date, datetime):
+                        shop_info["fiscal"]["taxcom_paid_up"] = taxcom_date
+                    else:
+                        shop_info["fiscal"]["taxcom_paid_up"] = None
+                case 14:
+                    fn_num = col[row].value
+                    try:
+                        shop_info["fiscal"]["fn_num"] = int(fn_num)
+                    except TypeError:
+                        shop_info["fiscal"]["fn_num"] = None
+                case 15:
+                    fn_end_date = col[row].value
+                    if isinstance(fn_end_date, datetime):
+                        shop_info["fiscal"]["fn_end_date"] = fn_end_date
+                    else:
+                        shop_info["fiscal"]["fn_end_date"] = None
+                case 16:
+                    fn_period_raw = col[row].value
+                    if fn_period_raw:
+                        fn_period = re.search('(13|15|36) месяцев', fn_period_raw).group(0)
+                    else:
+                        fn_period = None
+                    shop_info["fiscal"]["fn_period"] = fn_period
+                    print(fn_period)
         shops_info_list.append(shop_info)
     return shops_info_list
 
