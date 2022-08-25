@@ -69,8 +69,9 @@ def alltimetable_parser() -> list:
         shop_info = {}
         shop_info["main_info"] = {}  # словарь с основными данными о ммагазине
         shop_info["fiscal"] = {}  # словарь с данными о фискальном регистраторе
-        for col in worksheet.iter_cols(2, worksheet.max_column):
-            
+        shop_info["devices"] = {}  # словарь с данными об оборудованиии на кассе
+        shop_info["egais"] = {}
+        for col in worksheet.iter_cols(2, worksheet.max_column):    
             match col[row].column:               
                 case 2:  # номер магазина
                     num = col[row].value  # проверяем есть ли данные в ячейке
@@ -104,15 +105,15 @@ def alltimetable_parser() -> list:
                     shop_info["fiscal"]["taxcom_name"] = taxcom_name
                 case 11:  # заводской номер ккт
                     fabric_num = col[row].value
-                    try:
-                        shop_info["fiscal"]["fabric_num"] = int(fabric_num)
-                    except TypeError:
+                    if fabric_num:
+                        shop_info["fiscal"]["fabric_num"] = fabric_num
+                    else:
                         shop_info["fiscal"]["fabric_num"] = None
                 case 12:  # регистрационный номер ккт
                     reg_num = col[row].value
-                    try:
-                        shop_info["fiscal"]["reg_num"] = int(reg_num)
-                    except TypeError:
+                    if reg_num:
+                        shop_info["fiscal"]["reg_num"] = reg_num
+                    else:
                         shop_info["fiscal"]["reg_num"] = None
                 case 13:  # оплата в такскоме до
                     taxcom_date = col[row].value
@@ -120,26 +121,82 @@ def alltimetable_parser() -> list:
                         shop_info["fiscal"]["taxcom_paid_up"] = taxcom_date
                     else:
                         shop_info["fiscal"]["taxcom_paid_up"] = None
-                case 14:
+                case 14:  # номер фн
                     fn_num = col[row].value
-                    try:
-                        shop_info["fiscal"]["fn_num"] = int(fn_num)
-                    except TypeError:
+                    if fn_num:
+                        shop_info["fiscal"]["fn_num"] = fn_num
+                    else:
                         shop_info["fiscal"]["fn_num"] = None
-                case 15:
+                case 15:  # дата окончания фн
                     fn_end_date = col[row].value
                     if isinstance(fn_end_date, datetime):
                         shop_info["fiscal"]["fn_end_date"] = fn_end_date
                     else:
                         shop_info["fiscal"]["fn_end_date"] = None
-                case 16:
+                case 16:  # срок фн
                     fn_period_raw = col[row].value
                     if fn_period_raw:
                         fn_period = re.search('(13|15|36) месяцев', fn_period_raw).group(0)
                     else:
                         fn_period = None
                     shop_info["fiscal"]["fn_period"] = fn_period
-                    print(fn_period)
+                case 17:  # тип компьютера на кассе
+                    kkt_hardware = col[row].value
+                    if kkt_hardware:
+                        shop_info["devices"]["kkt_comp"] = kkt_hardware
+                    else:
+                        shop_info["devices"]["kkt_comp"] = None
+                case 18:   # наличие ЕГАИС
+                    is_egais = col[row].value
+                    # if not is_egais:
+                    #     shop_info["egais"]["avaliable"] = None
+                    if is_egais == "да":
+                        shop_info["egais"]["avaliable"] = True
+                    elif is_egais == "нет":
+                        shop_info["egais"]["avaliable"] = False
+                    else:
+                        shop_info["egais"]["avaliable"] = None
+                case 19:
+                    gost_key_date = col[row].value
+                    if isinstance(gost_key_date, datetime):
+                        shop_info["egais"]["gost_key_date"] = gost_key_date
+                    else:
+                        shop_info["egais"]["gost_key_date"] = None
+                case 20:
+                    rsa_key_date = col[row].value
+                    if isinstance(rsa_key_date, datetime):
+                        shop_info["egais"]["rsa_key_date"] = rsa_key_date
+                    else:
+                        shop_info["egais"]["rsa_key_date"] = None
+                case 21:
+                    fsrar_id = col[row].value
+                    if fsrar_id:
+                        shop_info["egais"]["fsrar_id"] = fsrar_id
+                    else:
+                        shop_info["egais"]["fsrar_id"] = None
+                case 22:
+                    kkt_os = col[row].value
+                    if kkt_os:
+                        shop_info["devices"]["kkt_os"] = kkt_os
+                    else:
+                        shop_info["devices"]["kkt_os"] = None
+                case 23:
+                    logic_pos_num = col[row].value
+                    try:
+                        shop_info["devices"]["logic_pos_num"] = int(logic_pos_num)
+                    except TypeError:
+                        shop_info["devices"]["logic_pos_num"] = None
+                case 24:
+                    pass
+                case 25:
+                    shtrih_ver_raw = col[row].value
+                    try:
+                        shtrih_ver = re.search('(\d.\d.\d.\d)', shtrih_ver_raw).group(0)
+                    except AttributeError:
+                        shtrih_ver = None
+                    except TypeError:
+                        shtrih_ver = None
+                    shop_info["devices"]["shtrih_ver"] = shtrih_ver
         shops_info_list.append(shop_info)
     return shops_info_list
 
