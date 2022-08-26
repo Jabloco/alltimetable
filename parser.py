@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+from xmlrpc.client import Boolean
 
 import openpyxl
 
@@ -27,6 +28,32 @@ def separate_num(words_list: list) -> tuple[dict, dict]:
                 or len(re.match('[\d]+', word).group(0)) == 11):
             corp_phone.append(int(word))
     return person_phone, corp_phone
+
+def find_yes(cell_data) -> Boolean:
+    """
+    Функция для нахождения ДА в ячейке.
+
+    Возвращает True или False.
+    """
+    try:
+        if re.match('(да)', cell_data, re.IGNORECASE).group(0):
+            is_yes = True
+    except AttributeError:
+        is_yes = False
+    except TypeError:
+        is_yes = False
+    return is_yes
+
+def is_date(cell_data) -> datetime:
+    """
+    Функция для определения что данные в ячейке есть дата
+
+    Возвращает datetime
+    """
+    if isinstance(cell_data, datetime):
+        return cell_data
+    else:
+        return None
 
 
 def contacts_parser(file_link: str) -> list:
@@ -73,7 +100,7 @@ def alltimetable_parser() -> list:
         for col in worksheet.iter_cols(2, worksheet.max_column):    
             match col[row].column:               
                 case 2:  # номер магазина
-                    num = col[row].value  # проверяем есть ли данные в ячейке
+                    num = col[row].value
                     if num:
                         shop_info["main_info"]["num_shop"] = re.search('[\d]+', num).group()
                     else:
@@ -116,10 +143,7 @@ def alltimetable_parser() -> list:
                         shop_info["fiscal"]["reg_num"] = None
                 case 13:  # оплата в такскоме до
                     taxcom_date = col[row].value
-                    if isinstance(taxcom_date, datetime):
-                        shop_info["fiscal"]["taxcom_paid_up"] = taxcom_date
-                    else:
-                        shop_info["fiscal"]["taxcom_paid_up"] = None
+                    shop_info["fiscal"]["taxcom_paid_up"] = is_date(taxcom_date)
                 case 14:  # номер фн
                     fn_num = col[row].value
                     if fn_num:
@@ -128,10 +152,7 @@ def alltimetable_parser() -> list:
                         shop_info["fiscal"]["fn_num"] = None
                 case 15:  # дата окончания фн
                     fn_end_date = col[row].value
-                    if isinstance(fn_end_date, datetime):
-                        shop_info["fiscal"]["fn_end_date"] = fn_end_date
-                    else:
-                        shop_info["fiscal"]["fn_end_date"] = None
+                    shop_info["fiscal"]["fn_end_date"] = is_date(fn_end_date)
                 case 16:  # срок фн
                     fn_period_raw = col[row].value
                     if fn_period_raw:
@@ -147,36 +168,23 @@ def alltimetable_parser() -> list:
                         shop_info["devices"]["kkt_comp"] = None
                 case 18:   # наличие ЕГАИС
                     is_egais = col[row].value
-                    # if not is_egais:
-                    #     shop_info["egais"]["avaliable"] = None
-                    if is_egais == "да":
-                        shop_info["egais"]["avaliable"] = True
-                    elif is_egais == "нет":
-                        shop_info["egais"]["avaliable"] = False
-                    else:
-                        shop_info["egais"]["avaliable"] = None
-                case 19:
+                    shop_info["egais"]["avaliable"] = find_yes(is_egais)
+                case 19:  # срок ГОСТ ключа
                     gost_key_date = col[row].value
-                    if isinstance(gost_key_date, datetime):
-                        shop_info["egais"]["gost_key_date"] = gost_key_date
-                    else:
-                        shop_info["egais"]["gost_key_date"] = None
-                case 20:
+                    shop_info["egais"]["gost_key_date"] = is_date(gost_key_date)
+                case 20:  #  срок RSA ключа
                     rsa_key_date = col[row].value
-                    if isinstance(rsa_key_date, datetime):
-                        shop_info["egais"]["rsa_key_date"] = rsa_key_date
-                    else:
-                        shop_info["egais"]["rsa_key_date"] = None
-                case 21:
+                    shop_info["egais"]["rsa_key_date"] = is_date(rsa_key_date)
+                case 21:  # fsrar id
                     fsrar_id = col[row].value
                     if fsrar_id:
                         shop_info["egais"]["fsrar_id"] = fsrar_id
                     else:
                         shop_info["egais"]["fsrar_id"] = None
-                case 22:
+                case 22:  # ОС на кассе
                     kkt_os = col[row].value
                     shop_info["devices"]["kkt_os"] = kkt_os
-                case 23:
+                case 23:  # логический номер терминала
                     logic_pos_num = col[row].value
                     try:
                         shop_info["devices"]["logic_pos_num"] = int(logic_pos_num)
@@ -184,7 +192,7 @@ def alltimetable_parser() -> list:
                         shop_info["devices"]["logic_pos_num"] = None
                 case 24:
                     pass
-                case 25:
+                case 25:  # версия кассира
                     shtrih_ver_raw = col[row].value
                     try:
                         shtrih_ver = re.search('(\d.\d.\d.\d)', shtrih_ver_raw).group(0)
@@ -193,17 +201,14 @@ def alltimetable_parser() -> list:
                     except TypeError:
                         shtrih_ver = None
                     shop_info["devices"]["shtrih_ver"] = shtrih_ver
-                case 26:
+                case 26:  # сигареты
                     cigarettes_raw = col[row].value
-                    try:
-                        cigarettes = re.match('(да)', cigarettes_raw, re.IGNORECASE).group(0)
-                    except AttributeError:
-                        cigarettes = None
-                    except TypeError:
-                        cigarettes = None
-                    print(cigarettes)
+                    cigarettes = find_yes(cigarettes_raw)
                     shop_info["main_info"]["cigarettes"] = cigarettes
-                    
+                case 27:  # считыватель пропусков
+                    permit_raw = col[row].value
+                    permit = find_yes(permit_raw)
+                    shop_info["devices"]["permit"] = permit
         shops_info_list.append(shop_info)
     return shops_info_list
 
