@@ -1,6 +1,5 @@
 import re
 from datetime import datetime
-from types import NoneType
 
 import openpyxl
 
@@ -176,10 +175,7 @@ def alltimetable_parser() -> list:
                         shop_info["egais"]["fsrar_id"] = None
                 case 22:
                     kkt_os = col[row].value
-                    if kkt_os:
-                        shop_info["devices"]["kkt_os"] = kkt_os
-                    else:
-                        shop_info["devices"]["kkt_os"] = None
+                    shop_info["devices"]["kkt_os"] = kkt_os
                 case 23:
                     logic_pos_num = col[row].value
                     try:
@@ -197,6 +193,17 @@ def alltimetable_parser() -> list:
                     except TypeError:
                         shtrih_ver = None
                     shop_info["devices"]["shtrih_ver"] = shtrih_ver
+                case 26:
+                    cigarettes_raw = col[row].value
+                    try:
+                        cigarettes = re.match('(да)', cigarettes_raw, re.IGNORECASE).group(0)
+                    except AttributeError:
+                        cigarettes = None
+                    except TypeError:
+                        cigarettes = None
+                    print(cigarettes)
+                    shop_info["main_info"]["cigarettes"] = cigarettes
+                    
         shops_info_list.append(shop_info)
     return shops_info_list
 
