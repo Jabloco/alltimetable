@@ -1,6 +1,5 @@
 import re
 from datetime import datetime
-from xmlrpc.client import Boolean
 
 import openpyxl
 
@@ -29,7 +28,7 @@ def separate_num(words_list: list) -> tuple[dict, dict]:
             corp_phone.append(int(word))
     return person_phone, corp_phone
 
-def find_yes(cell_data) -> Boolean:
+def find_yes(cell_data) -> bool:
     """
     Функция для нахождения ДА в ячейке.
 
@@ -143,7 +142,7 @@ def alltimetable_parser() -> list:
                         shop_info["fiscal"]["reg_num"] = None
                 case 13:  # оплата в такскоме до
                     taxcom_date = col[row].value
-                    shop_info["fiscal"]["taxcom_paid_up"] = is_date(taxcom_date)
+                    shop_info["fiscal"]["taxcom_end_date"] = is_date(taxcom_date)
                 case 14:  # номер фн
                     fn_num = col[row].value
                     if fn_num:
