@@ -4,6 +4,8 @@ from datetime import datetime
 import openpyxl
 
 from files_names import contacts_file
+from files_names import monitoring_file
+from files_names import alltime_file
 
 
 def separate_num(words_list: list) -> tuple[dict, dict]:
@@ -28,6 +30,7 @@ def separate_num(words_list: list) -> tuple[dict, dict]:
             corp_phone.append(int(word))
     return person_phone, corp_phone
 
+
 def find_yes(cell_data) -> bool:
     """
     Функция для нахождения ДА в ячейке.
@@ -43,6 +46,7 @@ def find_yes(cell_data) -> bool:
         is_yes = False
     return is_yes
 
+
 def is_date(cell_data) -> datetime:
     """
     Функция для определения что данные в ячейке есть дата
@@ -52,6 +56,16 @@ def is_date(cell_data) -> datetime:
     if isinstance(cell_data, datetime):
         return cell_data
     else:
+        return None
+
+
+def shop_num(cell_data):
+    try:
+        if re.match('(маг[ ]+№|магазин[ ]+№)[\d]+', cell_data, re.IGNORECASE).group(0):
+            return int(re.search('[\d]+', cell_data).group())
+    except TypeError:
+        return None
+    except AttributeError:
         return None
 
 
@@ -86,24 +100,21 @@ def contacts_parser(file_link: str) -> list:
     return shops_info_list
 
 
-def alltimetable_parser() -> list:
-    alltimetable_book = openpyxl.load_workbook("alltime.xlsx")
+def alltimetable_parser(file_link) -> list:
+    alltimetable_book = openpyxl.load_workbook(file_link)
     worksheet = alltimetable_book.active
     shops_info_list = []
     for row in range(1, worksheet.max_row):
         shop_info = {}
-        shop_info["main_info"] = {}  # словарь с основными данными о ммагазине
+        shop_info["main_info"] = {}  # словарь с основными данными о магазине
         shop_info["fiscal"] = {}  # словарь с данными о фискальном регистраторе
         shop_info["devices"] = {}  # словарь с данными об оборудованиии на кассе
         shop_info["egais"] = {}
         for col in worksheet.iter_cols(2, worksheet.max_column):    
-            match col[row].column:               
+            match col[row].column:
                 case 2:  # номер магазина
                     num = col[row].value
-                    if num:
-                        shop_info["main_info"]["num_shop"] = re.search('[\d]+', num).group()
-                    else:
-                        shop_info["main_info"]["num_shop"] = None
+                    shop_info["main_info"]["num_shop"] = shop_num(num)
                 case 3:  # адрес магазина
                     shop_info["main_info"]["address"] = col[row].value
                 case 4:  # статус магазина
@@ -212,8 +223,29 @@ def alltimetable_parser() -> list:
     return shops_info_list
 
 
+def monitoring_parser(file_link: str) -> list:
+    monitoring_book = openpyxl.load_workbook(file_link)
+    worksheet = monitoring_book.active
+    monitoring_shop_info_list = []
+    for row in range(18, worksheet.max_row):
+        shop_info = {}
+        shop_info["main_info"] = {}  # словарь с основными данными о магазине
+        shop_info["fiscal"] = {}  # словарь с данными о фискальном регистраторе
+        for col in worksheet.iter_cols(3, 16):
+            # print(col[row].value, end="\t")
+            match col[row].column:
+                case 3:
+                    shop_info["main_info"]["shop_num"] = shop_num(col[row].value)
+
+
+        monitoring_shop_info_list.append(shop_info)
+    return monitoring_shop_info_list
+
+
 if __name__ == "__main__":
-    for elem in contacts_parser(contacts_file):
-        print(elem)
-    for e in alltimetable_parser():
+    # for elem in contacts_parser(contacts_file):
+    #     print(elem)
+    for e in alltimetable_parser(alltime_file):
         print(e, sep="\n")
+    for el in monitoring_parser(monitoring_file):
+        print(el, sep="\n")
