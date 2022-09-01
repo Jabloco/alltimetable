@@ -47,7 +47,7 @@ def find_yes(cell_data) -> bool:
     return is_yes
 
 
-def is_date(cell_data) -> datetime:
+def is_date(cell_data) -> datetime | None:
     """
     Функция для определения что данные в ячейке есть дата
 
@@ -59,10 +59,34 @@ def is_date(cell_data) -> datetime:
         return None
 
 
-def shop_num(cell_data):
+def shop_num(cell_data) -> int | None:
     try:
         if re.match('(маг[ ]+№|магазин[ ]+№)[\d]+', cell_data, re.IGNORECASE).group(0):
             return int(re.search('[\d]+', cell_data).group())
+    except TypeError:
+        return None
+    except AttributeError:
+        return None
+
+
+def is_kkt_num(cell_data) -> str | None:
+    """
+    Функция для определения являются ли данные в ячейке рег номером ККТ
+    """
+    try:
+        return re.match('[\d]{16}', cell_data).group(0)
+    except TypeError:
+        return None
+    except AttributeError:
+        return None
+
+
+def kkt_fabric_num(cell_data) -> str | None:
+    """
+    Функция проверяет являются ли данные в ячейке заводским номером
+    """
+    try:
+        return re.match('[\d]{16}', cell_data).group(0)
     except TypeError:
         return None
     except AttributeError:
@@ -110,7 +134,7 @@ def alltimetable_parser(file_link) -> list:
         shop_info["fiscal"] = {}  # словарь с данными о фискальном регистраторе
         shop_info["devices"] = {}  # словарь с данными об оборудованиии на кассе
         shop_info["egais"] = {}
-        for col in worksheet.iter_cols(2, worksheet.max_column):    
+        for col in worksheet.iter_cols(2, worksheet.max_column):
             match col[row].column:
                 case 2:  # номер магазина
                     num = col[row].value
@@ -140,17 +164,9 @@ def alltimetable_parser(file_link) -> list:
                     taxcom_name = col[row].value
                     shop_info["fiscal"]["taxcom_name"] = taxcom_name
                 case 11:  # заводской номер ккт
-                    fabric_num = col[row].value
-                    if fabric_num:
-                        shop_info["fiscal"]["fabric_num"] = fabric_num
-                    else:
-                        shop_info["fiscal"]["fabric_num"] = None
+                    shop_info["fiscal"]["fabric_num"] = is_kkt_num(col[row].value)
                 case 12:  # регистрационный номер ккт
-                    reg_num = col[row].value
-                    if reg_num:
-                        shop_info["fiscal"]["reg_num"] = reg_num
-                    else:
-                        shop_info["fiscal"]["reg_num"] = None
+                    shop_info["fiscal"]["reg_num"] = is_kkt_num(col[row].value)
                 case 13:  # оплата в такскоме до
                     taxcom_date = col[row].value
                     shop_info["fiscal"]["taxcom_end_date"] = is_date(taxcom_date)
@@ -182,7 +198,7 @@ def alltimetable_parser(file_link) -> list:
                 case 19:  # срок ГОСТ ключа
                     gost_key_date = col[row].value
                     shop_info["egais"]["gost_key_date"] = is_date(gost_key_date)
-                case 20:  #  срок RSA ключа
+                case 20:  # срок RSA ключа
                     rsa_key_date = col[row].value
                     shop_info["egais"]["rsa_key_date"] = is_date(rsa_key_date)
                 case 21:  # fsrar id
@@ -232,12 +248,17 @@ def monitoring_parser(file_link: str) -> list:
         shop_info["main_info"] = {}  # словарь с основными данными о магазине
         shop_info["fiscal"] = {}  # словарь с данными о фискальном регистраторе
         for col in worksheet.iter_cols(3, 16):
-            # print(col[row].value, end="\t")
             match col[row].column:
                 case 3:
                     shop_info["main_info"]["shop_num"] = shop_num(col[row].value)
-
-
+                case 5:
+                    shop_info["main_info"]["shop_address"] = col[row].value
+                case 6:
+                    shop_info["main_info"]["ofd_kkt_name"] = col[row].value
+                case 7:
+                    shop_info["fiscal"]["kkt_reg_num"] = is_kkt_num(col[row].value)
+                case 8:
+                    shop_info["fiscal"]["kkt_fabric_num"] = is_kkt_num(col[row].value)
         monitoring_shop_info_list.append(shop_info)
     return monitoring_shop_info_list
 
@@ -245,7 +266,7 @@ def monitoring_parser(file_link: str) -> list:
 if __name__ == "__main__":
     # for elem in contacts_parser(contacts_file):
     #     print(elem)
-    for e in alltimetable_parser(alltime_file):
-        print(e, sep="\n")
+    # for e in alltimetable_parser(alltime_file):
+    #     print(e, sep="\n")
     for el in monitoring_parser(monitoring_file):
         print(el, sep="\n")
