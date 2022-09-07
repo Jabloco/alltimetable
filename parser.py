@@ -22,7 +22,7 @@ class ShopInfo(BaseModel):
 
 
 class AllShopInfo(BaseModel):
-    all_shop_info: list[ShopInfo]
+    items: list[ShopInfo]
 
 
 def separate_num(words_list: list) -> tuple[list, list]:
@@ -135,7 +135,7 @@ def contacts_parser(file_link: str) -> AllShopInfo:
         except ValidationError as e:
             print(e.json())
         all_shop.append(shop)
-    return AllShopInfo(all_shop_info=all_shop)
+    return AllShopInfo(items=all_shop)
 
 
 def alltimetable_parser(file_link) -> list:
