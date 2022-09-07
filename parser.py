@@ -15,14 +15,53 @@ class PhoneNum(BaseModel):
     corp_num: list[int] | None = None
 
 
-class ShopInfo(BaseModel):
+class MainInfo(BaseModel):
     shop_num: int | None = None
-    num_shipment: list[int] | None = None
-    phone_num: PhoneNum | None
+    shop_shipment_num: list[int] | None = None
+    shop_post_index: int | None = None
+    shop_address: str | None = None
+    shop_phone_num: PhoneNum
+    shop_kpp: int | None = None
+    shop_entity: str | None = None
+    shop_cigarettes: bool | None = None
+    shop_status: bool | None = None
 
 
-class AllShopInfo(BaseModel):
-    items: list[ShopInfo]
+class FiscalInfo(BaseModel):
+    fiscal_model: str | None = None
+    fiscal_fabric_num: str | None = None
+    fiscal_reg_num: str | None = None
+    fascal_taxcom_name: str | None = None
+    fiscal_taxcom_end_date: datetime | None = None
+    fiscal_fn_num: str | None = None
+    fiscal_fn_period: int | None = None
+    fiscal_fn_end_day: datetime | None = None
+
+
+class DevicesInfo(BaseModel):
+    arm_comp: str | None = None
+    arm_os: str | None = None
+    arm_shtrih_ver: str | None = None
+    arm_pos_num: str | None = None
+    arm_permit: bool | None = None
+
+
+class EgaisInfo(BaseModel):
+    egais_avaliable: bool | None = None
+    egais_fsrar_id: str | None = None
+    egais_gost_key_end_date: datetime | None = None
+    egais_rsa_key_end_date: datetime | None = None
+
+
+class ShopInfo(BaseModel):
+    main_info: MainInfo
+    fiscal_info: FiscalInfo | None = None
+    devices_info: DevicesInfo | None = None
+    egais_info: EgaisInfo | None = None
+
+
+class AllShopsInfo(BaseModel):
+    shops: list[ShopInfo]
 
 
 def separate_num(words_list: list) -> tuple[list, list]:
@@ -102,7 +141,7 @@ def is_kkt_num(cell_data) -> str | None:
         return None
 
 
-def contacts_parser(file_link: str) -> AllShopInfo:
+def contacts_parser(file_link: str) -> AllShopsInfo:
     """
     Из файла парсим номер магазина, номер партии, телефоны
     Возвращает список словарей
@@ -123,19 +162,28 @@ def contacts_parser(file_link: str) -> AllShopInfo:
                         words_list = re.findall('[\w]+', col[row].value)
                     person_phone, corp_phone = separate_num(words_list)
                     try:
-                        phones = PhoneNum(person_num=person_phone, corp_num=corp_phone)
+                        phones = PhoneNum(
+                            person_num=person_phone,
+                            corp_num=corp_phone
+                            )
                     except ValidationError as e:
                         print(e.json())
         try:
-            shop = ShopInfo(
-                num_shipment=num_shipment_raw,
+            shop_main_info = MainInfo(
+                shop_shipment_num=num_shipment_raw,
                 shop_num=shop_num_raw,
-                phone_num=phones
+                shop_phone_num=phones
             )
         except ValidationError as e:
             print(e.json())
-        all_shop.append(shop)
-    return AllShopInfo(items=all_shop)
+        try:
+            shop_info = ShopInfo(
+                main_info=shop_main_info
+            )
+        except ValidationError as e:
+            print(e.json())
+        all_shop.append(shop_info)
+    return AllShopsInfo(shops=all_shop)
 
 
 def alltimetable_parser(file_link) -> list:
