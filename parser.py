@@ -280,7 +280,7 @@ def alltimetable_parser(file_link) -> list:
                 case 12:  # регистрационный номер ккт
                     fiscal_reg_num_raw = is_kkt_num(col[row].value)
                 case 13:  # оплата в такскоме до
-                    fiscal_taxcom_date = is_date(col[row].value)
+                    fiscal_taxcom_date_raw = is_date(col[row].value)
                 case 14:  # номер фн
                     fiscal_fn_num_raw = col[row].value
                 case 15:  # дата окончания фн
@@ -298,11 +298,9 @@ def alltimetable_parser(file_link) -> list:
                 case 21:  # fsrar id
                     egais_fsrar_id_raw = find_fsrar_id(col[row].value)
                 case 22:  # ОС на кассе
-                    arm_os_raw_os = col[row].value
+                    arm_os_raw = col[row].value
                 case 23:  # логический номер терминала
                     arm_pos_num_raw = find_logic_num(col[row].value)
-                case 24:
-                    pass
                 case 25:  # версия кассира
                     arm_strih_ver_raw = find_shtrih_ver(col[row].value)
                 case 26:  # сигареты
@@ -329,7 +327,7 @@ def alltimetable_parser(file_link) -> list:
                 fiscal_fabric_num=fiscal_fabric_raw,
                 fiscal_reg_num=fiscal_reg_num_raw,
                 fascal_taxcom_name=fiscal_taxcom_name_raw,
-                fiscal_taxcom_end_date=fiscal_fn_end_date_raw,
+                fiscal_taxcom_end_date=fiscal_taxcom_date_raw,
                 fiscal_fn_num=fiscal_fn_num_raw,
                 fiscal_fn_period=fiscal_fn_period_raw,
                 fiscal_fn_end_day=fiscal_fn_end_date_raw
@@ -338,12 +336,36 @@ def alltimetable_parser(file_link) -> list:
             print(e.json())
 
         try:
-            shop_info = ShopInfo(
-                main_info=shop_main_info,
-                fiscal_info=fiscal_info_dump
+            arm_info_dump = DevicesInfo(
+                arm_comp=arm_comp_raw,
+                arm_os=arm_os_raw,
+                arm_shtrih_ver=arm_strih_ver_raw,
+                arm_pos_num=arm_pos_num_raw,
+                arm_permit=permit_raw
             )
         except ValidationError as e:
             print(e.json())
+
+        try:
+            egais_dump = EgaisInfo(
+                egais_avaliable=egais_avaliable_raw,
+                egais_gost_key_end_date=egais_gost_key_date_raw,
+                egais_rsa_key_date_raw=egais_rsa_key_date_raw,
+                egais_fsrar_id=egais_fsrar_id_raw
+            )
+        except ValidationError as e:
+            print(e.json())
+
+        try:
+            shop_info = ShopInfo(
+                main_info=shop_main_info,
+                fiscal_info=fiscal_info_dump,
+                devices_info=arm_info_dump,
+                egais_info=egais_dump
+            )
+        except ValidationError as e:
+            print(e.json())
+
         all_shop.append(shop_info)
     return AllShopsInfo(shops=all_shop)
 
