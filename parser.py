@@ -20,7 +20,7 @@ class MainInfo(BaseModel):
     shop_shipment_num: list[int] | None = None
     shop_post_index: int | None = None
     shop_address: str | None = None
-    shop_phone_num: PhoneNum
+    shop_phone_num: PhoneNum | None
     shop_kpp: int | None = None
     shop_entity: str | None = None
     shop_cigarettes: bool | None = None
@@ -42,7 +42,7 @@ class DevicesInfo(BaseModel):
     arm_comp: str | None = None
     arm_os: str | None = None
     arm_shtrih_ver: str | None = None
-    arm_pos_num: str | None = None
+    arm_pos_num: int | None = None
     arm_permit: bool | None = None
 
 
@@ -102,6 +102,17 @@ def find_yes(cell_data) -> bool:
         is_yes = False
     return is_yes
 
+def find_status(cell_data) -> bool:
+    try:
+        if re.match('(действующий)', cell_data, re.IGNORECASE).group(0):
+            status = True
+    except AttributeError:
+        status = False
+    except TypeError:
+        status = False
+    return status
+
+
 
 def is_date(cell_data) -> datetime | None:
     """
@@ -115,7 +126,7 @@ def is_date(cell_data) -> datetime | None:
         return None
 
 
-def shop_num(cell_data) -> int | None:
+def find_shop_num(cell_data) -> int | None:
     try:
         if re.match('(маг[ ]+№|магазин[ ]+№)[\d]+', cell_data, re.IGNORECASE).group(0):
             return int(re.search('[\d]+', cell_data).group())
@@ -141,10 +152,63 @@ def is_kkt_num(cell_data) -> str | None:
         return None
 
 
+def find_post_index(cell_data) -> str | None:
+    try:
+        return re.match('[\d]{6}', cell_data).group(0)
+    except TypeError:
+        return None
+    except AttributeError:
+        return None
+
+
+def find_shop_kpp(cell_data) -> str | None:
+    try:
+        return re.search('[\d]{9}', cell_data).group(0)
+    except TypeError:
+        return None
+    except AttributeError:
+        return None
+
+
+def find_fn_period(cell_data) -> int | None:
+    try:
+        return int(re.search('13|15|36', cell_data).group(0))
+    except TypeError:
+        return None
+    except AttributeError:
+        return None
+
+
+def find_fsrar_id(cell_data) -> str | None:
+    try:
+        return re.match('[\d]{12}', cell_data).group(0)
+    except TypeError:
+        return None
+    except AttributeError:
+        return None
+
+
+def find_logic_num(cell_data) -> int | None:
+    try:
+        return re.match('[\d]{1,3}',cell_data).group(0)
+    except TypeError:
+        return None
+    except AttributeError:
+        return None
+
+
+def find_shtrih_ver(cell_data) -> str | None:
+    try:
+        return re.search('(\d.\d.\d.\d)', cell_data).group(0)
+    except AttributeError:
+        return None
+    except TypeError:
+        return None
+
+
 def contacts_parser(file_link: str) -> AllShopsInfo:
     """
     Из файла парсим номер магазина, номер партии, телефоны
-    Возвращает список словарей
     """
     contacts_book = openpyxl.load_workbook(file_link)
     worksheet = contacts_book.active
@@ -189,116 +253,80 @@ def contacts_parser(file_link: str) -> AllShopsInfo:
 def alltimetable_parser(file_link) -> list:
     alltimetable_book = openpyxl.load_workbook(file_link)
     worksheet = alltimetable_book.active
-    shops_info_list = []
+    all_shop = []
     for row in range(1, worksheet.max_row):
-        shop_info = {}
-        shop_info["main_info"] = {}  # словарь с основными данными о магазине
-        shop_info["fiscal"] = {}  # словарь с данными о фискальном регистраторе
-        shop_info["devices"] = {}  # словарь с данными об оборудованиии на кассе
-        shop_info["egais"] = {}
         for col in worksheet.iter_cols(2, worksheet.max_column):
             match col[row].column:
                 case 2:  # номер магазина
-                    num = col[row].value
-                    shop_info["main_info"]["num_shop"] = shop_num(num)
+                    shop_num_raw = find_shop_num(col[row].value)
                 case 3:  # адрес магазина
-                    shop_info["main_info"]["address"] = col[row].value
+                    shop_address_raw = col[row].value
                 case 4:  # статус магазина
-                    shop_info["main_info"]["status"] = col[row].value
+                    shop_status_raw = find_status(col[row].value)
                 case 5:  # юридическое лицо
-                    shop_info["main_info"]["entity"] = col[row].value
+                    shop_entity_raw = col[row].value
                 case 6:  # почтовый индекс
-                    post_index = col[row].value
-                    try:
-                        shop_info["main_info"]["post_index"] = int(post_index)
-                    except TypeError:
-                        shop_info["main_info"]["post_index"] = None
+                    shop_post_index_raw = find_post_index(col[row].value)
                 case 7:  # КПП
-                    kpp = col[row].value
-                    try:
-                        shop_info["main_info"]["kpp"] = int(kpp)
-                    except TypeError:
-                        shop_info["main_info"]["kpp"] = None
+                    shop_kpp_raw = find_shop_kpp(col[row].value)
                 case 9:  # модель фискальника
-                    fiscal_model = col[row].value
-                    shop_info["fiscal"]["fiscal_model"] = fiscal_model
+                    fiscal_model_raw = col[row].value
                 case 10:  # имя в Такскоме
-                    taxcom_name = col[row].value
-                    shop_info["fiscal"]["taxcom_name"] = taxcom_name
+                    fiscal_taxcom_name_raw = col[row].value
                 case 11:  # заводской номер ккт
-                    shop_info["fiscal"]["fabric_num"] = is_kkt_num(col[row].value)
+                    fiscal_fabric_raw = is_kkt_num(col[row].value)
                 case 12:  # регистрационный номер ккт
-                    shop_info["fiscal"]["reg_num"] = is_kkt_num(col[row].value)
+                    fiscal_reg_num_raw = is_kkt_num(col[row].value)
                 case 13:  # оплата в такскоме до
-                    taxcom_date = col[row].value
-                    shop_info["fiscal"]["taxcom_end_date"] = is_date(taxcom_date)
+                    fiscal_taxcom_date = is_date(col[row].value)
                 case 14:  # номер фн
-                    fn_num = col[row].value
-                    if fn_num:
-                        shop_info["fiscal"]["fn_num"] = fn_num
-                    else:
-                        shop_info["fiscal"]["fn_num"] = None
+                    fiscal_fn_num = col[row].value
                 case 15:  # дата окончания фн
-                    fn_end_date = col[row].value
-                    shop_info["fiscal"]["fn_end_date"] = is_date(fn_end_date)
+                    fiscal_fn_end_date_raw = is_date(col[row].value)
                 case 16:  # срок фн
-                    fn_period_raw = col[row].value
-                    if fn_period_raw:
-                        fn_period = re.search('(13|15|36) месяцев', fn_period_raw).group(0)
-                    else:
-                        fn_period = None
-                    shop_info["fiscal"]["fn_period"] = fn_period
+                    fiscal_fn_period_raw = find_fn_period(col[row].value)
                 case 17:  # тип компьютера на кассе
-                    kkt_hardware = col[row].value
-                    if kkt_hardware:
-                        shop_info["devices"]["kkt_comp"] = kkt_hardware
-                    else:
-                        shop_info["devices"]["kkt_comp"] = None
+                    arm_comp_raw = col[row].value
                 case 18:   # наличие ЕГАИС
-                    is_egais = col[row].value
-                    shop_info["egais"]["avaliable"] = find_yes(is_egais)
+                    egais_avaliable_raw = find_yes(col[row].value)
                 case 19:  # срок ГОСТ ключа
-                    gost_key_date = col[row].value
-                    shop_info["egais"]["gost_key_date"] = is_date(gost_key_date)
+                    egais_gost_key_date_raw = is_date(col[row].value)
                 case 20:  # срок RSA ключа
-                    rsa_key_date = col[row].value
-                    shop_info["egais"]["rsa_key_date"] = is_date(rsa_key_date)
+                    egais_rsa_key_date_raw = is_date(col[row].value)
                 case 21:  # fsrar id
-                    fsrar_id = col[row].value
-                    if fsrar_id:
-                        shop_info["egais"]["fsrar_id"] = fsrar_id
-                    else:
-                        shop_info["egais"]["fsrar_id"] = None
+                    egais_fsrar_id_raw = find_fsrar_id(col[row].value)
                 case 22:  # ОС на кассе
-                    kkt_os = col[row].value
-                    shop_info["devices"]["kkt_os"] = kkt_os
+                    arm_os_raw_os = col[row].value
                 case 23:  # логический номер терминала
-                    logic_pos_num = col[row].value
-                    try:
-                        shop_info["devices"]["logic_pos_num"] = int(logic_pos_num)
-                    except TypeError:
-                        shop_info["devices"]["logic_pos_num"] = None
+                    arm_pos_num_raw = find_logic_num(col[row].value)
                 case 24:
                     pass
                 case 25:  # версия кассира
-                    shtrih_ver_raw = col[row].value
-                    try:
-                        shtrih_ver = re.search('(\d.\d.\d.\d)', shtrih_ver_raw).group(0)
-                    except AttributeError:
-                        shtrih_ver = None
-                    except TypeError:
-                        shtrih_ver = None
-                    shop_info["devices"]["shtrih_ver"] = shtrih_ver
+                    arm_strih_ver_raw = find_shtrih_ver(col[row].value)
                 case 26:  # сигареты
-                    cigarettes_raw = col[row].value
-                    cigarettes = find_yes(cigarettes_raw)
-                    shop_info["main_info"]["cigarettes"] = cigarettes
+                    cigarettes_raw = find_yes(col[row].value)
                 case 27:  # считыватель пропусков
-                    permit_raw = col[row].value
-                    permit = find_yes(permit_raw)
-                    shop_info["devices"]["permit"] = permit
-        shops_info_list.append(shop_info)
-    return shops_info_list
+                    permit_raw = find_yes(col[row].value)
+        try:
+            shop_main_info = MainInfo(
+                shop_num=shop_num_raw,
+                shop_post_index=shop_post_index_raw,
+                shop_address=shop_address_raw,
+                shop_kpp=shop_kpp_raw,
+                shop_entity=shop_entity_raw,
+                shop_cigarettes=cigarettes_raw,
+                shop_status=shop_status_raw
+            )
+        except ValidationError as e:
+            print(e.json())
+        try:
+            shop_info = ShopInfo(
+                main_info=shop_main_info
+            )
+        except ValidationError as e:
+            print(e.json())
+        all_shop.append(shop_info)
+    return AllShopsInfo(shops=all_shop)
 
 
 def monitoring_parser(file_link: str) -> list:
@@ -312,7 +340,7 @@ def monitoring_parser(file_link: str) -> list:
         for col in worksheet.iter_cols(3, 16):
             match col[row].column:
                 case 3:
-                    shop_info["main_info"]["shop_num"] = shop_num(col[row].value)
+                    shop_info["main_info"]["shop_num"] = find_shop_num(col[row].value)
                 case 5:
                     shop_info["main_info"]["shop_address"] = col[row].value
                 case 6:
@@ -326,10 +354,5 @@ def monitoring_parser(file_link: str) -> list:
 
 
 if __name__ == "__main__":
-    print(contacts_parser(contacts_file).json())
-    # for elem in contacts_parser(contacts_file):
-    #     print(elem)
-    # for e in alltimetable_parser(alltime_file):
-    #     print(e, sep="\n")
-    # for el in monitoring_parser(monitoring_file):
-    #     print(el, sep="\n")
+    # print(contacts_parser(contacts_file).json())
+    print(alltimetable_parser(alltime_file).json())
