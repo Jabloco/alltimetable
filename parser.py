@@ -1,3 +1,5 @@
+from base64 import encode
+from json import encoder
 import re
 from datetime import datetime
 
@@ -154,7 +156,7 @@ def is_kkt_num(cell_data) -> str | None:
 
 def find_post_index(cell_data) -> str | None:
     try:
-        return re.match('[\d]{6}', cell_data).group(0)
+        return re.match('[\d]{6}', str(cell_data)).group(0)
     except TypeError:
         return None
     except AttributeError:
@@ -163,7 +165,7 @@ def find_post_index(cell_data) -> str | None:
 
 def find_shop_kpp(cell_data) -> str | None:
     try:
-        return re.search('[\d]{9}', cell_data).group(0)
+        return re.search('[\d]{9}', str(cell_data)).group(0)
     except TypeError:
         return None
     except AttributeError:
@@ -280,7 +282,7 @@ def alltimetable_parser(file_link) -> list:
                 case 13:  # оплата в такскоме до
                     fiscal_taxcom_date = is_date(col[row].value)
                 case 14:  # номер фн
-                    fiscal_fn_num = col[row].value
+                    fiscal_fn_num_raw = col[row].value
                 case 15:  # дата окончания фн
                     fiscal_fn_end_date_raw = is_date(col[row].value)
                 case 16:  # срок фн
@@ -307,6 +309,7 @@ def alltimetable_parser(file_link) -> list:
                     cigarettes_raw = find_yes(col[row].value)
                 case 27:  # считыватель пропусков
                     permit_raw = find_yes(col[row].value)
+        
         try:
             shop_main_info = MainInfo(
                 shop_num=shop_num_raw,
@@ -319,9 +322,25 @@ def alltimetable_parser(file_link) -> list:
             )
         except ValidationError as e:
             print(e.json())
+        
+        try:
+            fiscal_info_dump = FiscalInfo(
+                fiscal_model=fiscal_model_raw,
+                fiscal_fabric_num=fiscal_fabric_raw,
+                fiscal_reg_num=fiscal_reg_num_raw,
+                fascal_taxcom_name=fiscal_taxcom_name_raw,
+                fiscal_taxcom_end_date=fiscal_fn_end_date_raw,
+                fiscal_fn_num=fiscal_fn_num_raw,
+                fiscal_fn_period=fiscal_fn_period_raw,
+                fiscal_fn_end_day=fiscal_fn_end_date_raw
+            )
+        except ValidationError as e:
+            print(e.json())
+
         try:
             shop_info = ShopInfo(
-                main_info=shop_main_info
+                main_info=shop_main_info,
+                fiscal_info=fiscal_info_dump
             )
         except ValidationError as e:
             print(e.json())
@@ -355,4 +374,4 @@ def monitoring_parser(file_link: str) -> list:
 
 if __name__ == "__main__":
     # print(contacts_parser(contacts_file).json())
-    print(alltimetable_parser(alltime_file).json())
+    print(alltimetable_parser(alltime_file).json(ensure_ascii=False))
