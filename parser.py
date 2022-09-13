@@ -1,5 +1,3 @@
-from base64 import encode
-from json import encoder
 import re
 from datetime import datetime
 
@@ -104,6 +102,7 @@ def find_yes(cell_data) -> bool:
         is_yes = False
     return is_yes
 
+
 def find_status(cell_data) -> bool:
     try:
         if re.match('(действующий)', cell_data, re.IGNORECASE).group(0):
@@ -113,7 +112,6 @@ def find_status(cell_data) -> bool:
     except TypeError:
         status = False
     return status
-
 
 
 def is_date(cell_data) -> datetime | None:
@@ -214,7 +212,7 @@ def contacts_parser(file_link: str) -> AllShopsInfo:
     """
     contacts_book = openpyxl.load_workbook(file_link)
     worksheet = contacts_book.active
-    all_shop = []
+    all_shops = []
     for row in range(1, worksheet.max_row):
         for col in worksheet.iter_cols(2, worksheet.max_column):
             match col[row].column:
@@ -234,6 +232,7 @@ def contacts_parser(file_link: str) -> AllShopsInfo:
                             )
                     except ValidationError as e:
                         print(e.json())
+
         try:
             shop_main_info = MainInfo(
                 shop_shipment_num=num_shipment_raw,
@@ -242,20 +241,21 @@ def contacts_parser(file_link: str) -> AllShopsInfo:
             )
         except ValidationError as e:
             print(e.json())
+
         try:
             shop_info = ShopInfo(
                 main_info=shop_main_info
             )
         except ValidationError as e:
             print(e.json())
-        all_shop.append(shop_info)
-    return AllShopsInfo(shops=all_shop)
+        all_shops.append(shop_info)
+    return AllShopsInfo(shops=all_shops)
 
 
 def alltimetable_parser(file_link) -> list:
     alltimetable_book = openpyxl.load_workbook(file_link)
     worksheet = alltimetable_book.active
-    all_shop = []
+    all_shops = []
     for row in range(1, worksheet.max_row):
         for col in worksheet.iter_cols(2, worksheet.max_column):
             match col[row].column:
@@ -307,7 +307,7 @@ def alltimetable_parser(file_link) -> list:
                     cigarettes_raw = find_yes(col[row].value)
                 case 27:  # считыватель пропусков
                     permit_raw = find_yes(col[row].value)
-        
+
         try:
             shop_main_info = MainInfo(
                 shop_num=shop_num_raw,
@@ -320,7 +320,7 @@ def alltimetable_parser(file_link) -> list:
             )
         except ValidationError as e:
             print(e.json())
-        
+
         try:
             fiscal_info_dump = FiscalInfo(
                 fiscal_model=fiscal_model_raw,
@@ -366,34 +366,63 @@ def alltimetable_parser(file_link) -> list:
         except ValidationError as e:
             print(e.json())
 
-        all_shop.append(shop_info)
-    return AllShopsInfo(shops=all_shop)
+        all_shops.append(shop_info)
+    return AllShopsInfo(shops=all_shops)
 
 
 def monitoring_parser(file_link: str) -> list:
     monitoring_book = openpyxl.load_workbook(file_link)
     worksheet = monitoring_book.active
-    monitoring_shop_info_list = []
+    all_shops = []
     for row in range(18, worksheet.max_row):
-        shop_info = {}
-        shop_info["main_info"] = {}  # словарь с основными данными о магазине
-        shop_info["fiscal"] = {}  # словарь с данными о фискальном регистраторе
         for col in worksheet.iter_cols(3, 16):
             match col[row].column:
                 case 3:
-                    shop_info["main_info"]["shop_num"] = find_shop_num(col[row].value)
+                    shop_num_raw = find_shop_num(col[row].value)
                 case 5:
-                    shop_info["main_info"]["shop_address"] = col[row].value
+                    shop_address_raw = col[row].value
                 case 6:
-                    shop_info["main_info"]["ofd_kkt_name"] = col[row].value
+                    fiscal_taxcom_name_raw = col[row].value
                 case 7:
-                    shop_info["fiscal"]["kkt_reg_num"] = is_kkt_num(col[row].value)
+                    fiscal_reg_num_raw = is_kkt_num(col[row].value)
                 case 8:
-                    shop_info["fiscal"]["kkt_fabric_num"] = is_kkt_num(col[row].value)
-        monitoring_shop_info_list.append(shop_info)
-    return monitoring_shop_info_list
+                    fiscal_fabric_num_raw = is_kkt_num(col[row].value)
+                case 9:
+                    fiscal_model_raw = col[row].value
+                case 11:
+                    fiscal_taxcom_end_date_raw = is_date(col[row].value)
+
+        try:
+            shop_main_info = MainInfo(
+                shop_num=shop_num_raw,
+                shop_address=shop_address_raw
+            )
+        except ValidationError as e:
+            print(e.json())
+
+        try:
+            fiscal_info_dump = FiscalInfo(
+                fiscal_model=fiscal_model_raw,
+                fiscal_fabric_num=fiscal_fabric_num_raw,
+                fiscal_reg_num=fiscal_reg_num_raw,
+                fiscal_taxcom_name=fiscal_taxcom_name_raw,
+                fiscal_taxcom_end_date=fiscal_taxcom_end_date_raw
+            )
+        except ValidationError as e:
+            print(e.json())
+
+        try:
+            shop_info = ShopInfo(
+                main_info=shop_main_info,
+                fiscal_info=fiscal_info_dump
+            )
+        except ValidationError as e:
+            print(e.json())
+        all_shops.append(shop_info)
+    return AllShopsInfo(shops=all_shops)
 
 
 if __name__ == "__main__":
-    # print(contacts_parser(contacts_file).json())
+    print(contacts_parser(contacts_file).json(ensure_ascii=False))
     print(alltimetable_parser(alltime_file).json(ensure_ascii=False))
+    print(monitoring_parser(monitoring_file).json(ensure_ascii=False))
