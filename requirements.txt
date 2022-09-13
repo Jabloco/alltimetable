@@ -1,0 +1,17 @@
+anyio==3.6.1
+et-xmlfile==1.1.0
+fastapi==0.81.0
+flake8==5.0.4
+greenlet==1.1.3
+idna==3.3
+mccabe==0.7.0
+openpyxl==3.0.10
+pycodestyle==2.9.1
+pydantic==1.9.2
+pyflakes==2.5.0
+sniffio==1.2.0
+SQLAlchemy==1.4.40
+sqlalchemy2-stubs==0.0.2a26
+sqlmodel==0.0.7
+starlette==0.19.1
+typing_extensions==4.3.0
