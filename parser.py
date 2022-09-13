@@ -252,7 +252,7 @@ def contacts_parser(file_link: str) -> AllShopsInfo:
     return AllShopsInfo(shops=all_shops)
 
 
-def alltimetable_parser(file_link) -> list:
+def alltimetable_parser(file_link) -> AllShopsInfo:
     alltimetable_book = openpyxl.load_workbook(file_link)
     worksheet = alltimetable_book.active
     all_shops = []
@@ -370,7 +370,7 @@ def alltimetable_parser(file_link) -> list:
     return AllShopsInfo(shops=all_shops)
 
 
-def monitoring_parser(file_link: str) -> list:
+def monitoring_parser(file_link: str) -> AllShopsInfo:
     monitoring_book = openpyxl.load_workbook(file_link)
     worksheet = monitoring_book.active
     all_shops = []
