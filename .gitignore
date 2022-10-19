@@ -1,6 +1,8 @@
 *.xlsx
 *.~lock.*
 files_names.py
+settings.py
+alembic.ini
 
 
 # Byte-compiled / optimized / DLL files

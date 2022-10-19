@@ -3,9 +3,8 @@ from datetime import datetime
 from sqlmodel import Field, SQLModel
 
 
-
 class ShopInfo(SQLModel, table=True):
-    id: int | Field(default=None, primary_key=True)
+    id: int = Field(default=None, primary_key=True)
     shop_num: int | None = None
     shop_address: str | None = None
     shop_status: bool | None = None
@@ -15,12 +14,13 @@ class ShopInfo(SQLModel, table=True):
 
 
 class EntityInfo(SQLModel, table=True):
-    id: int | Field(default=None, primary_key=True)
+    id: int = Field(default=None, primary_key=True)
     entity_name: str | None = None
     entity_inn: str | None = None
 
+
 class ArmInfo(SQLModel, table=True):
-    id: int | Field(default=None, primary_key=True)
+    id: int = Field(default=None, primary_key=True)
     shop_num: int | None = None
     arm_comp: str | None = None
     arm_os: str | None = None
@@ -28,8 +28,9 @@ class ArmInfo(SQLModel, table=True):
     arm_pos_num: int | None = None
     arm_permit: bool | None = None
 
+
 class FiscalInfo(SQLModel, table=True):
-    id: int | Field(default=None, primary_key=True)
+    id: int = Field(default=None, primary_key=True)
     shop_num: int | None = None
     fiscal_model: str | None = None
     fiscal_fabric_num: str | None = None
