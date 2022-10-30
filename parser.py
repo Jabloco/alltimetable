@@ -2,66 +2,21 @@ import re
 from datetime import datetime
 
 import openpyxl
-from pydantic import BaseModel
+
 from pydantic import ValidationError
+
 
 from files_names import contacts_file
 from files_names import monitoring_file
 from files_names import alltime_file
 
-
-class PhoneNum(BaseModel):
-    person_num: list[int] | None = None
-    corp_num: list[int] | None = None
-
-
-class MainInfo(BaseModel):
-    shop_num: int | None = None
-    shop_shipment_num: list[int] | None = None
-    shop_post_index: int | None = None
-    shop_address: str | None = None
-    shop_phone_num: PhoneNum | None
-    shop_kpp: int | None = None
-    shop_entity: str | None = None
-    shop_cigarettes: bool | None = None
-    shop_status: bool | None = None
-
-
-class FiscalInfo(BaseModel):
-    fiscal_model: str | None = None
-    fiscal_fabric_num: str | None = None
-    fiscal_reg_num: str | None = None
-    fascal_taxcom_name: str | None = None
-    fiscal_taxcom_end_date: datetime | None = None
-    fiscal_fn_num: str | None = None
-    fiscal_fn_period: int | None = None
-    fiscal_fn_end_day: datetime | None = None
-
-
-class DevicesInfo(BaseModel):
-    arm_comp: str | None = None
-    arm_os: str | None = None
-    arm_shtrih_ver: str | None = None
-    arm_pos_num: int | None = None
-    arm_permit: bool | None = None
-
-
-class EgaisInfo(BaseModel):
-    egais_avaliable: bool | None = None
-    egais_fsrar_id: str | None = None
-    egais_gost_key_end_date: datetime | None = None
-    egais_rsa_key_end_date: datetime | None = None
-
-
-class ShopInfo(BaseModel):
-    main_info: MainInfo
-    fiscal_info: FiscalInfo | None = None
-    devices_info: DevicesInfo | None = None
-    egais_info: EgaisInfo | None = None
-
-
-class AllShopsInfo(BaseModel):
-    shops: list[ShopInfo]
+from pydentic_models import PhoneNum
+from pydentic_models import MainData
+from pydentic_models import FiscalData
+from pydentic_models import DevicesData
+from pydentic_models import EgaisData
+from pydentic_models import ShopData
+from pydentic_models import AllShopsInfo
 
 
 def separate_num(words_list: list) -> tuple[list, list]:
@@ -139,7 +94,7 @@ def find_shop_num(cell_data) -> int | None:
 def is_kkt_num(cell_data) -> str | None:
     """
     Функция для определения являются ли данные в ячейке каким либо номером кассы
-    
+
     Заводской номер и рег.номер ККТ имеют одинаковую длину.
 
     Что это будет за номер зависит только от столбца
@@ -190,7 +145,7 @@ def find_fsrar_id(cell_data) -> str | None:
 
 def find_logic_num(cell_data) -> int | None:
     try:
-        return re.match('[\d]{1,3}',cell_data).group(0)
+        return re.match('[\d]{1,3}', cell_data).group(0)
     except TypeError:
         return None
     except AttributeError:
@@ -234,7 +189,7 @@ def contacts_parser(file_link: str) -> AllShopsInfo:
                         print(e.json())
 
         try:
-            shop_main_info = MainInfo(
+            shop_main_info = MainData(
                 shop_shipment_num=num_shipment_raw,
                 shop_num=shop_num_raw,
                 shop_phone_num=phones
@@ -243,7 +198,7 @@ def contacts_parser(file_link: str) -> AllShopsInfo:
             print(e.json())
 
         try:
-            shop_info = ShopInfo(
+            shop_info = ShopData(
                 main_info=shop_main_info
             )
         except ValidationError as e:
@@ -309,7 +264,7 @@ def alltimetable_parser(file_link) -> AllShopsInfo:
                     permit_raw = find_yes(col[row].value)
 
         try:
-            shop_main_info = MainInfo(
+            shop_main_info = MainData(
                 shop_num=shop_num_raw,
                 shop_post_index=shop_post_index_raw,
                 shop_address=shop_address_raw,
@@ -322,7 +277,7 @@ def alltimetable_parser(file_link) -> AllShopsInfo:
             print(e.json())
 
         try:
-            fiscal_info_dump = FiscalInfo(
+            fiscal_info_dump = FiscalData(
                 fiscal_model=fiscal_model_raw,
                 fiscal_fabric_num=fiscal_fabric_raw,
                 fiscal_reg_num=fiscal_reg_num_raw,
@@ -336,7 +291,7 @@ def alltimetable_parser(file_link) -> AllShopsInfo:
             print(e.json())
 
         try:
-            arm_info_dump = DevicesInfo(
+            arm_info_dump = DevicesData(
                 arm_comp=arm_comp_raw,
                 arm_os=arm_os_raw,
                 arm_shtrih_ver=arm_strih_ver_raw,
@@ -347,7 +302,7 @@ def alltimetable_parser(file_link) -> AllShopsInfo:
             print(e.json())
 
         try:
-            egais_dump = EgaisInfo(
+            egais_dump = EgaisData(
                 egais_avaliable=egais_avaliable_raw,
                 egais_gost_key_end_date=egais_gost_key_date_raw,
                 egais_rsa_key_date_raw=egais_rsa_key_date_raw,
@@ -357,7 +312,7 @@ def alltimetable_parser(file_link) -> AllShopsInfo:
             print(e.json())
 
         try:
-            shop_info = ShopInfo(
+            shop_info = ShopData(
                 main_info=shop_main_info,
                 fiscal_info=fiscal_info_dump,
                 devices_info=arm_info_dump,
@@ -393,7 +348,7 @@ def monitoring_parser(file_link: str) -> AllShopsInfo:
                     fiscal_taxcom_end_date_raw = is_date(col[row].value)
 
         try:
-            shop_main_info = MainInfo(
+            shop_main_info = MainData(
                 shop_num=shop_num_raw,
                 shop_address=shop_address_raw
             )
@@ -401,7 +356,7 @@ def monitoring_parser(file_link: str) -> AllShopsInfo:
             print(e.json())
 
         try:
-            fiscal_info_dump = FiscalInfo(
+            fiscal_info_dump = FiscalData(
                 fiscal_model=fiscal_model_raw,
                 fiscal_fabric_num=fiscal_fabric_num_raw,
                 fiscal_reg_num=fiscal_reg_num_raw,
@@ -412,7 +367,7 @@ def monitoring_parser(file_link: str) -> AllShopsInfo:
             print(e.json())
 
         try:
-            shop_info = ShopInfo(
+            shop_info = ShopData(
                 main_info=shop_main_info,
                 fiscal_info=fiscal_info_dump
             )
@@ -423,6 +378,6 @@ def monitoring_parser(file_link: str) -> AllShopsInfo:
 
 
 if __name__ == "__main__":
-    print(contacts_parser(contacts_file).json(ensure_ascii=False))
+    # print(contacts_parser(contacts_file).json(ensure_ascii=False))
     print(alltimetable_parser(alltime_file).json(ensure_ascii=False))
-    print(monitoring_parser(monitoring_file).json(ensure_ascii=False))
+    # print(monitoring_parser(monitoring_file).json(ensure_ascii=False))
