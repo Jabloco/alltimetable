@@ -6,7 +6,7 @@ from models import EntityInfo
 from models import ShopInfo
 from models import ArmInfo
 from models import FiscalInfo
-from pydentic_models import ShopData
+from pydantic_models import ShopData
 
 
 db_url = f"postgresql://{db_user}:{db_pass}@{db_host}/{db_name}"
