@@ -21,10 +21,13 @@ def write_to_db(raw_json):
     """
     shop_info = ShopData.parse_raw(raw_json)
     with Session(engine) as session:
-        entity_info = EntityInfo(
-            entity_name=shop_info.main_info.shop_entity,
-            entity_inn=shop_info.main_info.shop_entity_inn
-        )
+        if shop_info.main_info.shop_entity or shop_info.main_info.shop_entity_inn:
+            entity_info = EntityInfo(
+                entity_name=shop_info.main_info.shop_entity,
+                entity_inn=shop_info.main_info.shop_entity_inn
+            )
+        else:
+            entity_info = None
 
         shop_main_info = ShopInfo(
             shop_num=shop_info.main_info.shop_num,
@@ -64,7 +67,8 @@ def write_to_db(raw_json):
         )
 
         session.add(shop_main_info)
-        session.add(entity_info)
+        if entity_info:
+            session.add(entity_info)
         session.add(arm_info)
         session.add(fiscal_info)
         session.commit()
@@ -90,7 +94,8 @@ if __name__ == "__main__":
                 "corp_num": [89220000000]
                 },
             "shop_kpp": 400000000,
-            "shop_entity": "Рога и копыта",
+            "shop_entity": null,
+            "shop_entity_inn": null,
             "shop_cigarettes": false,
             "shop_status": true
         },
