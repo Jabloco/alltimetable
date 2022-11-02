@@ -62,24 +62,35 @@ def write_to_db(raw_json):
         else:
             arm_info = None
 
-        fiscal_info = FiscalInfo(
-            fiscal_model=shop_info.fiscal_info.fiscal_model,
-            fiscal_fabric_num=shop_info.fiscal_info.fiscal_fabric_num,
-            fiscal_reg_num=shop_info.fiscal_info.fiscal_reg_num,
-            fiscal_taxcom_name=shop_info.fiscal_info.fascal_taxcom_name,
-            fiscal_taxcom_end_date=shop_info.fiscal_info.fiscal_taxcom_end_date,
-            fiscal_fn_num=shop_info.fiscal_info.fiscal_fn_num,
-            fiscal_fn_period=shop_info.fiscal_info.fiscal_fn_period,
-            fiscal_fn_end_day=shop_info.fiscal_info.fiscal_fn_end_day,
-            shop=shop_main_info
-        )
+        if (shop_info.fiscal_info.fiscal_model
+                or shop_info.fiscal_info.fiscal_fabric_num
+                or shop_info.fiscal_info.fiscal_reg_num
+                or shop_info.fiscal_info.fascal_taxcom_name
+                or shop_info.fiscal_info.fiscal_taxcom_end_date
+                or shop_info.fiscal_info.fiscal_fn_num
+                or shop_info.fiscal_info.fiscal_fn_period
+                or shop_info.fiscal_info.fiscal_fn_end_day):
+            fiscal_info = FiscalInfo(
+                fiscal_model=shop_info.fiscal_info.fiscal_model,
+                fiscal_fabric_num=shop_info.fiscal_info.fiscal_fabric_num,
+                fiscal_reg_num=shop_info.fiscal_info.fiscal_reg_num,
+                fiscal_taxcom_name=shop_info.fiscal_info.fascal_taxcom_name,
+                fiscal_taxcom_end_date=shop_info.fiscal_info.fiscal_taxcom_end_date,
+                fiscal_fn_num=shop_info.fiscal_info.fiscal_fn_num,
+                fiscal_fn_period=shop_info.fiscal_info.fiscal_fn_period,
+                fiscal_fn_end_day=shop_info.fiscal_info.fiscal_fn_end_day,
+                shop=shop_main_info
+            )
+        else:
+            fiscal_info = None
 
         session.add(shop_main_info)
         if entity_info:
             session.add(entity_info)
         if arm_info:
             session.add(arm_info)
-        session.add(fiscal_info)
+        if fiscal_info:
+            session.add(fiscal_info)
         session.commit()
 
 
