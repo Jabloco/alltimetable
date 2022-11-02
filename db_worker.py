@@ -45,14 +45,22 @@ def write_to_db(raw_json):
             entity=entity_info
         )
 
-        arm_info = ArmInfo(
-            arm_comp=shop_info.devices_info.arm_comp,
-            arm_os=shop_info.devices_info.arm_os,
-            arm_shtrih_ver=shop_info.devices_info.arm_shtrih_ver,
-            arm_pos_num=shop_info.devices_info.arm_pos_num,
-            arm_permit=shop_info.devices_info.arm_permit,
-            shop=shop_main_info
-        )
+
+        if (shop_info.devices_info.arm_comp
+                or shop_info.devices_info.arm_os
+                or shop_info.devices_info.arm_shtrih_ver
+                or shop_info.devices_info.arm_pos_num
+                or shop_info.devices_info.arm_permit):
+            arm_info = ArmInfo(
+                arm_comp=shop_info.devices_info.arm_comp,
+                arm_os=shop_info.devices_info.arm_os,
+                arm_shtrih_ver=shop_info.devices_info.arm_shtrih_ver,
+                arm_pos_num=shop_info.devices_info.arm_pos_num,
+                arm_permit=shop_info.devices_info.arm_permit,
+                shop=shop_main_info
+            )
+        else:
+            arm_info = None
 
         fiscal_info = FiscalInfo(
             fiscal_model=shop_info.fiscal_info.fiscal_model,
@@ -69,7 +77,8 @@ def write_to_db(raw_json):
         session.add(shop_main_info)
         if entity_info:
             session.add(entity_info)
-        session.add(arm_info)
+        if arm_info:
+            session.add(arm_info)
         session.add(fiscal_info)
         session.commit()
 
@@ -112,9 +121,9 @@ if __name__ == "__main__":
             },
         "devices_info":
             {
-                "arm_comp": "Сист + монитор",
-                "arm_os": "win7",
-                "arm_shtrih_ver": "5.1.6.6",
+                "arm_comp": null,
+                "arm_os": null,
+                "arm_shtrih_ver": null,
                 "arm_pos_num": 46,
                 "arm_permit": false
             },
