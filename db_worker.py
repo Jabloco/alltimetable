@@ -1,4 +1,4 @@
-from sqlmodel import Session, create_engine
+from sqlmodel import Session, create_engine, select
 from settings import db_host, db_user, db_pass, db_name
 
 
@@ -11,6 +11,21 @@ from pydantic_models import ShopData
 
 db_url = f"postgresql://{db_user}:{db_pass}@{db_host}/{db_name}"
 engine = create_engine(db_url)
+
+
+def is_data_in_db(model_in_db, **kwarg):
+    """
+    функция для определения есть ли в БД входящий набор данных
+
+    если данные есть возвращает True
+    """
+    with Session(engine) as session:
+        statement = select(model_in_db).where(**kwarg)
+        result = session.exec(statement)
+        if result:
+            return result, True
+
+    return None, None
 
 
 def write_to_db(raw_json):
