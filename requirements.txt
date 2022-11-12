@@ -16,6 +16,6 @@ pyflakes==2.5.0
 sniffio==1.2.0
 SQLAlchemy==1.4.40
 sqlalchemy2-stubs==0.0.2a26
-sqlmodel==0.0.7
+sqlmodel==0.0.8
 starlette==0.19.1
 typing_extensions==4.3.0
