@@ -1,31 +1,11 @@
 from sqlmodel import Session, create_engine, select
-from settings import db_host, db_user, db_pass, db_name
 
-
-from models import EntityInfo
-from models import ShopInfo
-from models import ArmInfo
-from models import FiscalInfo
+from models import ArmInfo, EntityInfo, FiscalInfo, ShopInfo
 from pydantic_models import ShopData
-
+from settings import db_host, db_name, db_pass, db_user
 
 db_url = f"postgresql://{db_user}:{db_pass}@{db_host}/{db_name}"
 engine = create_engine(db_url)
-
-
-def is_data_in_db(model_in_db, **kwarg):
-    """
-    функция для определения есть ли в БД входящий набор данных
-
-    если данные есть возвращает True
-    """
-    with Session(engine) as session:
-        statement = select(model_in_db).where(**kwarg)
-        result = session.exec(statement)
-        if result:
-            return result, True
-
-    return None, None
 
 
 def write_to_db(raw_json):
@@ -36,12 +16,20 @@ def write_to_db(raw_json):
     """
     shop_info = ShopData.parse_raw(raw_json)
     with Session(engine) as session:
-        if shop_info.main_info.shop_entity or shop_info.main_info.shop_entity_inn:
+        statement = select(EntityInfo).where(
+                EntityInfo.entity_name == shop_info.main_info.shop_entity,
+                EntityInfo.entity_inn == shop_info.main_info.shop_entity_inn
+                )
+        entity_in_db = session.exec(statement).first()
+
+        if entity_in_db is None:
             entity_info = EntityInfo(
                 entity_name=shop_info.main_info.shop_entity,
                 entity_inn=shop_info.main_info.shop_entity_inn
-            )
+                )
         else:
+            print(entity_in_db)
+            print("Юрлицо в базе")
             entity_info = None
 
         shop_main_info = ShopInfo(
@@ -59,7 +47,6 @@ def write_to_db(raw_json):
             egais_rsa_key_end_date=shop_info.egais_info.egais_rsa_key_end_date,
             entity=entity_info
         )
-
 
         if (shop_info.devices_info.arm_comp
                 or shop_info.devices_info.arm_os
@@ -129,8 +116,8 @@ if __name__ == "__main__":
                 "corp_num": [89220000000]
                 },
             "shop_kpp": 400000000,
-            "shop_entity": null,
-            "shop_entity_inn": null,
+            "shop_entity": "null",
+            "shop_entity_inn": "92992",
             "shop_cigarettes": false,
             "shop_status": true
         },
