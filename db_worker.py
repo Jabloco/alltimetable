@@ -116,7 +116,7 @@ if __name__ == "__main__":
                 "corp_num": [89220000000]
                 },
             "shop_kpp": 400000000,
-            "shop_entity": "null",
+            "shop_entity": 3,
             "shop_entity_inn": "92992",
             "shop_cigarettes": false,
             "shop_status": true
