@@ -44,8 +44,17 @@ def write_to_db(raw_json):
             entity = session.exec(statement_entity).first()
         return entity
 
-    def check_arm_in_db():
-        pass
+    def check_arm_in_db() -> ArmInfo | None:
+        with Session(engine) as session:
+            statement_arm = select(ArmInfo).where(
+                ArmInfo.arm_comp == shop_info.devices_info.arm_comp,
+                ArmInfo.arm_os == shop_info.devices_info.arm_os,
+                ArmInfo.arm_shtrih_ver == shop_info.devices_info.arm_shtrih_ver,
+                ArmInfo.arm_pos_num == shop_info.devices_info.arm_pos_num,
+                ArmInfo.arm_permit == shop_info.devices_info.arm_permit
+                )
+            arm = session.exec(statement_arm).first()
+        return arm
 
     def check_fiscal_in_db():
         pass
@@ -58,8 +67,6 @@ def write_to_db(raw_json):
                 entity_inn=shop_info.main_info.shop_entity_inn
                 )
         else:
-            print(entity_in_db)
-            print("Юрлицо в базе")
             entity_info = None
 
         shop_in_db = check_shop_in_db()
@@ -80,7 +87,6 @@ def write_to_db(raw_json):
                 entity=entity_info
                 )
         else:
-            print("магазин в базе")
             shop_main_info = None
 
         if (shop_info.devices_info.arm_comp
@@ -88,14 +94,18 @@ def write_to_db(raw_json):
                 or shop_info.devices_info.arm_shtrih_ver
                 or shop_info.devices_info.arm_pos_num
                 or shop_info.devices_info.arm_permit):
-            arm_info = ArmInfo(
-                arm_comp=shop_info.devices_info.arm_comp,
-                arm_os=shop_info.devices_info.arm_os,
-                arm_shtrih_ver=shop_info.devices_info.arm_shtrih_ver,
-                arm_pos_num=shop_info.devices_info.arm_pos_num,
-                arm_permit=shop_info.devices_info.arm_permit,
-                shop=shop_main_info
-            )
+            arm_in_db = check_arm_in_db()
+            if arm_in_db is None:
+                arm_info = ArmInfo(
+                    arm_comp=shop_info.devices_info.arm_comp,
+                    arm_os=shop_info.devices_info.arm_os,
+                    arm_shtrih_ver=shop_info.devices_info.arm_shtrih_ver,
+                    arm_pos_num=shop_info.devices_info.arm_pos_num,
+                    arm_permit=shop_info.devices_info.arm_permit,
+                    shop=shop_main_info
+                )
+            else:
+                arm_info = None
         else:
             arm_info = None
 
