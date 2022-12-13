@@ -15,13 +15,43 @@ def write_to_db(raw_json):
     на вход принимает json из модели pydentic
     """
     shop_info = ShopData.parse_raw(raw_json)
-    with Session(engine) as session:
-        statement = select(EntityInfo).where(
-                EntityInfo.entity_name == shop_info.main_info.shop_entity,
-                EntityInfo.entity_inn == shop_info.main_info.shop_entity_inn
-                )
-        entity_in_db = session.exec(statement).first()
 
+    def check_shop_in_db() -> ShopInfo | None:
+        with Session(engine) as session:
+            statement_shop_main_info = select(ShopInfo).where(
+                ShopInfo.shop_num == shop_info.main_info.shop_num,
+                ShopInfo.shop_address == str(shop_info.main_info.shop_post_index) + ', ' + shop_info.main_info.shop_address,
+                ShopInfo.shop_shipment == ' '.join(list(map(str, shop_info.main_info.shop_shipment_num))),
+                ShopInfo.shop_status == shop_info.main_info.shop_status,
+                ShopInfo.shop_kpp == shop_info.main_info.shop_kpp,
+                ShopInfo.cigarettes == shop_info.main_info.shop_cigarettes,
+                ShopInfo.shop_phone_person == ' '.join(shop_info.main_info.shop_phone_num.person_num),
+                ShopInfo.shop_phone_corp == ' '.join(shop_info.main_info.shop_phone_num.corp_num),
+                ShopInfo.egais_avaliable == shop_info.egais_info.egais_avaliable,
+                ShopInfo.egais_fsrar_id == shop_info.egais_info.egais_fsrar_id,
+                ShopInfo.egais_gost_key_end_date == shop_info.egais_info.egais_gost_key_end_date,
+                ShopInfo.egais_rsa_key_end_date == shop_info.egais_info.egais_rsa_key_end_date
+                )
+            shop = session.exec(statement_shop_main_info).first()
+        return shop
+
+    def check_entity_in_db() -> EntityInfo | None:
+        with Session(engine) as session:
+            statement_entity = select(EntityInfo).where(
+                    EntityInfo.entity_name == shop_info.main_info.shop_entity,
+                    EntityInfo.entity_inn == shop_info.main_info.shop_entity_inn
+                    )
+            entity = session.exec(statement_entity).first()
+        return entity
+
+    def check_arm_in_db():
+        pass
+
+    def check_fiscal_in_db():
+        pass
+
+    with Session(engine) as session:
+        entity_in_db = check_entity_in_db
         if entity_in_db is None:
             entity_info = EntityInfo(
                 entity_name=shop_info.main_info.shop_entity,
@@ -32,21 +62,26 @@ def write_to_db(raw_json):
             print("Юрлицо в базе")
             entity_info = None
 
-        shop_main_info = ShopInfo(
-            shop_num=shop_info.main_info.shop_num,
-            shop_address=str(shop_info.main_info.shop_post_index) + ', ' + shop_info.main_info.shop_address,
-            shop_shipment=' '.join(list(map(str, shop_info.main_info.shop_shipment_num))),
-            shop_status=shop_info.main_info.shop_status,
-            shop_kpp=shop_info.main_info.shop_kpp,
-            cigarettes=shop_info.main_info.shop_cigarettes,
-            shop_phone_person=' '.join(shop_info.main_info.shop_phone_num.person_num),
-            shop_phone_corp=' '.join(shop_info.main_info.shop_phone_num.corp_num),
-            egais_avaliable=shop_info.egais_info.egais_avaliable,
-            egais_fsrar_id=shop_info.egais_info.egais_fsrar_id,
-            egais_gost_key_end_date=shop_info.egais_info.egais_gost_key_end_date,
-            egais_rsa_key_end_date=shop_info.egais_info.egais_rsa_key_end_date,
-            entity=entity_info
-        )
+        shop_in_db = check_shop_in_db()
+        if shop_in_db is None:
+            shop_main_info = ShopInfo(
+                shop_num=shop_info.main_info.shop_num,
+                shop_address=str(shop_info.main_info.shop_post_index) + ', ' + shop_info.main_info.shop_address,
+                shop_shipment=' '.join(list(map(str, shop_info.main_info.shop_shipment_num))),
+                shop_status=shop_info.main_info.shop_status,
+                shop_kpp=shop_info.main_info.shop_kpp,
+                cigarettes=shop_info.main_info.shop_cigarettes,
+                shop_phone_person=' '.join(shop_info.main_info.shop_phone_num.person_num),
+                shop_phone_corp=' '.join(shop_info.main_info.shop_phone_num.corp_num),
+                egais_avaliable=shop_info.egais_info.egais_avaliable,
+                egais_fsrar_id=shop_info.egais_info.egais_fsrar_id,
+                egais_gost_key_end_date=shop_info.egais_info.egais_gost_key_end_date,
+                egais_rsa_key_end_date=shop_info.egais_info.egais_rsa_key_end_date,
+                entity=entity_info
+                )
+        else:
+            print("магазин в базе")
+            shop_main_info = None
 
         if (shop_info.devices_info.arm_comp
                 or shop_info.devices_info.arm_os
@@ -86,7 +121,8 @@ def write_to_db(raw_json):
         else:
             fiscal_info = None
 
-        session.add(shop_main_info)
+        if shop_main_info:
+            session.add(shop_main_info)
         if entity_info:
             session.add(entity_info)
         if arm_info:
