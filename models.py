@@ -29,6 +29,7 @@ class ShopInfo(SQLModel, table=True):
     egais_fsrar_id: str | None = None
     egais_gost_key_end_date: datetime | None = None
     egais_rsa_key_end_date: datetime | None = None
+
     """отношение с таблицей юрлиц"""
     entity_id: int = Field(default=None, foreign_key="entityinfo.id")
     """
