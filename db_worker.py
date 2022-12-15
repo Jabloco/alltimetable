@@ -57,7 +57,19 @@ def write_to_db(raw_json):
         return arm
 
     def check_fiscal_in_db():
-        pass
+        with Session(engine) as session:
+            statement_fiscal = select(FiscalInfo).where(
+                FiscalInfo.fiscal_model == shop_info.fiscal_info.fiscal_model,
+                FiscalInfo.fiscal_fabric_num == shop_info.fiscal_info.fiscal_fabric_num,
+                FiscalInfo.fiscal_reg_num == shop_info.fiscal_info.fiscal_reg_num,
+                FiscalInfo.fiscal_taxcom_name == shop_info.fiscal_info.fascal_taxcom_name,
+                FiscalInfo.fiscal_taxcom_end_date == shop_info.fiscal_info.fiscal_taxcom_end_date,
+                FiscalInfo.fiscal_fn_num == shop_info.fiscal_info.fiscal_fn_num,
+                FiscalInfo.fiscal_fn_period == shop_info.fiscal_info.fiscal_fn_period,
+                FiscalInfo.fiscal_fn_end_day == shop_info.fiscal_info.fiscal_fn_end_day
+                )
+            fiscal = session.exec(statement_fiscal).first()
+        return fiscal
 
     with Session(engine) as session:
         entity_in_db = check_entity_in_db
@@ -117,17 +129,21 @@ def write_to_db(raw_json):
                 or shop_info.fiscal_info.fiscal_fn_num
                 or shop_info.fiscal_info.fiscal_fn_period
                 or shop_info.fiscal_info.fiscal_fn_end_day):
-            fiscal_info = FiscalInfo(
-                fiscal_model=shop_info.fiscal_info.fiscal_model,
-                fiscal_fabric_num=shop_info.fiscal_info.fiscal_fabric_num,
-                fiscal_reg_num=shop_info.fiscal_info.fiscal_reg_num,
-                fiscal_taxcom_name=shop_info.fiscal_info.fascal_taxcom_name,
-                fiscal_taxcom_end_date=shop_info.fiscal_info.fiscal_taxcom_end_date,
-                fiscal_fn_num=shop_info.fiscal_info.fiscal_fn_num,
-                fiscal_fn_period=shop_info.fiscal_info.fiscal_fn_period,
-                fiscal_fn_end_day=shop_info.fiscal_info.fiscal_fn_end_day,
-                shop=shop_main_info
-            )
+            fiscal_in_db = check_fiscal_in_db()
+            if fiscal_in_db is None:
+                fiscal_info = FiscalInfo(
+                    fiscal_model=shop_info.fiscal_info.fiscal_model,
+                    fiscal_fabric_num=shop_info.fiscal_info.fiscal_fabric_num,
+                    fiscal_reg_num=shop_info.fiscal_info.fiscal_reg_num,
+                    fiscal_taxcom_name=shop_info.fiscal_info.fascal_taxcom_name,
+                    fiscal_taxcom_end_date=shop_info.fiscal_info.fiscal_taxcom_end_date,
+                    fiscal_fn_num=shop_info.fiscal_info.fiscal_fn_num,
+                    fiscal_fn_period=shop_info.fiscal_info.fiscal_fn_period,
+                    fiscal_fn_end_day=shop_info.fiscal_info.fiscal_fn_end_day,
+                    shop=shop_main_info
+                )
+            else:
+                fiscal_info = None
         else:
             fiscal_info = None
 
@@ -169,7 +185,7 @@ if __name__ == "__main__":
         },
         "fiscal_info":
             {
-                "fiscal_model": "РИТЕЙЛ",
+                "fiscal_model": "РИТЕЙЛ01",
                 "fiscal_fabric_num": "0000000000000995",
                 "fiscal_reg_num": "0000000000048029",
                 "fascal_taxcom_name": "Магазин №2_ККТ1",
